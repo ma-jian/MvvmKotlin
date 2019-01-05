@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.m.library.di.component.ApplicationComponent
 import com.m.library.mvvm.IActivity
-import com.m.mvvmkotlin.bind.ViewModelFactory
+import com.m.mvvmkotlin.bind.ViewModelFactoryTools
 
 /**
  * @Created by majian
@@ -22,9 +22,9 @@ abstract class BaseActivity : AppCompatActivity(), IActivity {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         /**
-         * [ViewModelFactory] viewmodel 工厂 。di 实现 model注入
+         * [ViewModelFactory] viewmodel 工具 。di 实现 model注入
          */
-        ViewModelFactory.getInstance().bind(this)
+        ViewModelFactoryTools.getInstance().bind(this)
         initView(savedInstanceState)
         initData()
     }

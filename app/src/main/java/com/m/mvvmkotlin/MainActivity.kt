@@ -5,7 +5,6 @@ import android.view.View
 import androidx.databinding.DataBindingUtil
 import com.m.annotation.BindViewModel
 import com.m.annotation.InjectViewModel
-import com.m.mvvmkotlin.bind.ViewModelFactory
 import com.m.mvvmkotlin.databinding.ActivityMainBinding
 import com.m.mvvmkotlin.sample.BaseActivity
 import com.m.mvvmkotlin.sample.DemoViewModel
