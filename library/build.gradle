@@ -1,0 +1,77 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion rootProject.compileSdkVersion
+    defaultConfig {
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+        versionCode rootProject.ext.versionCode
+        versionName rootProject.ext.versionName
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary true
+    }
+    androidExtensions {
+        experimental = true
+    }
+    buildTypes {
+        debug {
+            buildConfigField "Boolean", "ISDEBUG", "true"
+            buildConfigField "String", "BASE_URL", "\"$rootProject.ext.debug.baseUrl\""
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$rootProject.kotlinVersion"
+
+    api project(":annotation")
+//    kapt project(":apt")
+
+    //view
+    api "androidx.constraintlayout:constraintlayout:$rootProject.constraintLayoutVersion"
+    api "androidx.appcompat:appcompat:$rootProject.supportLibraryVersion"
+    api "androidx.recyclerview:recyclerview:$rootProject.recyclerViewVersion"
+    api "com.google.android.material:material:$rootProject.materialVersion"
+    api "android.arch.navigation:navigation-fragment-ktx:$rootProject.navigationVersion"
+    api "android.arch.navigation:navigation-ui-ktx:$rootProject.navigationVersion"
+
+    //tools
+    kapt "androidx.room:room-compiler:$rootProject.roomVersion"
+    api "androidx.room:room-runtime:$rootProject.roomVersion"
+    kapt "com.github.bumptech.glide:compiler:$rootProject.glideVersion"
+    api "com.github.bumptech.glide:glide:$rootProject.glideVersion"
+
+    api "androidx.lifecycle:lifecycle-extensions:$rootProject.lifecycleVersion"
+    api "androidx.core:core-ktx:$rootProject.ktxVersion"
+    api "com.google.code.gson:gson:$rootProject.gsonVersion"
+    api "org.jetbrains.kotlinx:kotlinx-coroutines-android:$rootProject.coroutinesVersion"
+    api "org.jetbrains.kotlinx:kotlinx-coroutines-core:$rootProject.coroutinesVersion"
+    api "android.arch.work:work-runtime-ktx:$rootProject.workVersion"
+    api "com.android.support:multidex:1.0.3"
+
+    //Rx
+    api "io.reactivex.rxjava2:rxjava:$rootProject.rxJava"
+    api "io.reactivex.rxjava2:rxandroid:$rootProject.rxAndroid"
+    api "com.squareup.retrofit2:retrofit:$rootProject.retrofit"
+    api "com.squareup.retrofit2:converter-gson:$rootProject.retrofit"
+    api "com.squareup.retrofit2:adapter-rxjava2:$rootProject.retrofit"
+    api 'com.squareup.okhttp3:logging-interceptor:3.12.1'
+
+    //dagger
+    api "com.google.dagger:dagger:$rootProject.dagger2"
+    kapt "com.google.dagger:dagger-compiler:$rootProject.dagger2"
+
+    //leakcanary
+    debugApi "com.squareup.leakcanary:leakcanary-android:$rootProject.leakcanary"
+    debugApi "com.squareup.leakcanary:leakcanary-support-fragment:$rootProject.leakcanary"
+//    compileOnly 'org.glassfish:javax.com.m.annotation:10.0-b28'
+
+    api 'com.google.code.findbugs:jsr305:3.0.2'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
