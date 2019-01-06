@@ -11,51 +11,60 @@ Respository (数据层)
 -----------------
     Respository(数据处理层): 是用来处理网络数据、数据库、本地等数据的逻辑。
 
-    自定义Repository只需继承BaseRepository (BaseRepository 由APT自动生成，并且提供所有网络(Retrofit)接口实例) 可以轻松获取各个接口数据。
+    自定义的Repository只需继承BaseRepository (BaseRepository 由APT自动生成,并且提供所有网络(Retrofit)接口实例)
 
-- 处理retrofit接口 添加注解ApiFactory即可，内涵大量关联类的注释。
+    在BaseRepository中可以轻松获取各个接口数据。
+
++ **处理retrofit接口 添加注解@ApiFactory即可**
 
 ![Retrofit interface](screenshots/retrofit0.png)
-- APT自动生成retrofit接口工厂，处理请求数据。
++ **APT自动生成retrofit接口工厂类,用于处理请求数据,内涵大量关联类的注释。**
 
 ![Retrofit interface](screenshots/retrofit1.png)
-- APT自动生成BaseRepository,通过dagger注入所有接口工厂,拥有所有retrofit接口工厂实例。
++ **APT自动生成BaseRepository,并且通过dagger注入所有接口工厂,拥有所有retrofit接口工厂的实例**
 
 ![Retrofit interface](screenshots/retrofit2.png)
 
 ViewModel (Model层)
 ------------------
-    ViewModel模块无须关心Factory的生产过程。只需在构造函数中 传入需要的Respository(数据层）,可同时传入多个数据源。
+    ViewModel模块无须关心自身Factory的生产过程。只需在构造函数中传入自身所需要的Respository(数据层）使用即可,
 
-    Factory将自动获取数据实例传入ViewModel中。
-- ViewModel构造传入数据源获取数据
+    ViewModle构造中可同时传入多个数据源,Factory将自动获取数据实例传入ViewModel中。
+
++ **ViewModel构造中传入需要的数据源获取数据**
 
 ![Retrofit interface](screenshots/model1.png)
-- APT自动生成对应的ViewModelFactory,并将model需要的数据源传入
++ **APT将自动生成ViewModel对应的ViewModelFactory,并将model需要的数据源传入**
 
 ![Retrofit interface](screenshots/model0.png)
 
 Activity/Fragment (View层)
 -------------------------
-    配合APT自动完成ViewModel 与Respository 的注入过程, 类似ButterKnife 利用控制反转轻松实现Activity/Fragment与ViewModel的关联。
-    View可支持多个ViewModel的注入。
-    
-- APT自动生成ViewModelFactory Tools,bind用于View与ViewModel的绑定。View中绑定ViewModel的个数取决于View中bindViewModel的个数
-![ViewModelFactory Tools](screenshots/view1.png)    ![View](screenshots/view2.png)
+    利用注解 @InjectViewModel @BindViewModel 配合APT自动完成ViewModel 与Respository 的注入过程,
 
-- 在View基类中获取ViewModelFactoryTools的实例,用于绑定View与ViewModel,并且给View中带有 @BindViewModel注解的 ViewModel赋值。
+    利用控制反转轻松实现Activity/Fragment与ViewModel的关联,类似ButterKnife。
+
+    同时View可支持多个ViewModel的注入
+
++ **APT自动生成ViewModelFactoryTools类,在bind方法中将View与ViewModel的绑定。**
+
+![ViewModelFactory Tools](screenshots/view1.png)
++ **View中绑定ViewModel的个数取决于View中 @BindViewModel的个数**
+
+![View](screenshots/view2.png)
++ **在View基类中获取ViewModelFactoryTools的实例,用于绑定View与ViewModel,并且给View中带有 @BindViewModel注解的 ViewModel赋值。**
 
 ![ViewModel](screenshots/view0.png)
 
-
+## Gif
 ![Video](screenshots/video.gif)
 
 
 Thanks
 --------------
-Google官方Jetpack框架 [android-sunflower][https://github.com/googlesamples/android-sunflower]
+- Google官方Jetpack框架 [android-sunflower](https://github.com/googlesamples/android-sunflower)
 
-感谢 [T-MVP][https://github.com/north2016/T-MVP] 提供学习参考
+- 感谢 [T-MVP](https://github.com/north2016/T-MVP) 提供学习参考
 
 
 Libraries Used
