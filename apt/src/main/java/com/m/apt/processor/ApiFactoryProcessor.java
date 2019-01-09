@@ -163,16 +163,16 @@ public class ApiFactoryProcessor implements IProcess {
 
 
             if (!roundEnv.getElementsAnnotatedWith(ApiFactory.class).isEmpty()) {
-
+                String repositoryPackage = PACKAGENAME + ".bind"; //BaseRepository位置
                 String interComponent = "BaseRepositoryComponent";
                 TypeSpec.Builder componentBuilder = TypeSpec.interfaceBuilder(interComponent)
                         .addAnnotation(Singleton.class)
                         .addAnnotation(AnnotationSpec.builder(Component.class)
                                 .addMember("modules", "{$T.class}", ClassName.get(LIBPACKAGENAME + ".di.module", "RetrofitModule")).build())
-                        .addMethod(MethodSpec.methodBuilder("inject").addParameter(ClassName.get(buildPackage, "BaseRepository"), "repository")
+                        .addMethod(MethodSpec.methodBuilder("inject").addParameter(ClassName.get(repositoryPackage, "BaseRepository"), "repository")
                                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT).build());
 
-                JavaFile componentFile = JavaFile.builder(buildPackage, componentBuilder.build()).build();
+                JavaFile componentFile = JavaFile.builder(repositoryPackage, componentBuilder.build()).build();
                 componentFile.writeTo(processor.mFiler);// 在 app /build/generated/source/kapt 生成一份源代码
 
                 TypeSpec.Builder classBuilder = TypeSpec.classBuilder("BaseRepository")
@@ -182,7 +182,7 @@ public class ApiFactoryProcessor implements IProcess {
 
                 MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
                         .addStatement("this.mSubscription = new $T()", ClassName.get("io.reactivex.disposables", "CompositeDisposable"))
-                        .addStatement("$T.builder().build().inject(this)", ClassName.get(buildPackage, "Dagger" + interComponent))
+                        .addStatement("$T.builder().build().inject(this)", ClassName.get(repositoryPackage, "Dagger" + interComponent))
                         .addModifiers(Modifier.PUBLIC);
 
                 FieldSpec disposiableField = FieldSpec.builder(ClassName.get("io.reactivex.disposables", "CompositeDisposable"), "mSubscription", Modifier.PUBLIC).build();
@@ -201,7 +201,7 @@ public class ApiFactoryProcessor implements IProcess {
                 classBuilder.addField(disposiableField);
                 classBuilder.addMethod(constructorBuilder.build());
                 classBuilder.addMethod(methodBuilder.build());
-                JavaFile javaFile = JavaFile.builder(buildPackage, classBuilder.build()).build();
+                JavaFile javaFile = JavaFile.builder(repositoryPackage, classBuilder.build()).build();
                 javaFile.writeTo(processor.mFiler);// 在 app /build/generated/source/kapt 生成一份源代码
             }
         } catch (Exception e) {

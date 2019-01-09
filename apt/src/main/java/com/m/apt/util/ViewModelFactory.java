@@ -28,12 +28,10 @@ import com.m.apt.AnnotationProcessor;
 
 public class ViewModelFactory {
     public static ClassName factory(TypeElement typeElement, AnnotationProcessor processor) throws IOException {
-        String qualifiedName = typeElement.getQualifiedName().toString();
         String simpleName = typeElement.getSimpleName().toString();
         String CLASS_NAME = simpleName + "Factory";
         //生成源码位置
-        String buildPackage = qualifiedName.replace(simpleName, "factory");
-        ClassName className = ClassName.get(buildPackage, CLASS_NAME);
+        String buildPackage = processor.mElements.getPackageOf(typeElement).getQualifiedName().toString();
 
         ClassName superTypeName = ClassName.get("androidx.lifecycle", "ViewModelProvider", "NewInstanceFactory");
         TypeSpec.Builder tbClass = TypeSpec.classBuilder(CLASS_NAME)

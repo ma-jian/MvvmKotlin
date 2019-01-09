@@ -2,7 +2,7 @@ package com.m.mvvmkotlin.sample
 
 import android.annotation.SuppressLint
 import com.m.library.utils.Log
-import com.m.library.utils.RxThread
+import com.m.mvvmkotlin.bind.BaseRepository
 import javax.inject.Inject
 
 /**
