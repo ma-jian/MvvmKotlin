@@ -51,7 +51,7 @@ dependencies {
     api "org.jetbrains.kotlinx:kotlinx-coroutines-android:$rootProject.coroutinesVersion"
     api "org.jetbrains.kotlinx:kotlinx-coroutines-core:$rootProject.coroutinesVersion"
     api "android.arch.work:work-runtime-ktx:$rootProject.workVersion"
-    api "com.android.support:multidex:1.0.3"
+    api "androidx.multidex:multidex:2.0.1"
 
     //Rx
     api "io.reactivex.rxjava2:rxjava:$rootProject.rxJava"

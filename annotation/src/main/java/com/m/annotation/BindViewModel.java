@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * Date : 2018/12/20
  * Describe : 绑定 ViewModel
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
 public @interface BindViewModel {
 }

@@ -26,4 +26,4 @@ build/
 *.iml
 gradle
 .idea
-gradlew
+local.properties

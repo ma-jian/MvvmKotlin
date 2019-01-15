@@ -1,1 +1,1 @@
-include ':app', ':library', ':apt', ':annotation'
+include ':app', ':library', ':apt', ':annotation', ':plugin'

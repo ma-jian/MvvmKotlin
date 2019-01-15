@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.databinding.DataBindingUtil
 import com.m.annotation.BindViewModel
+import com.m.annotation.DebugLog
 import com.m.annotation.InjectViewModel
 import com.m.mvvmkotlin.databinding.ActivityMainBinding
 import com.m.mvvmkotlin.sample.BaseActivity
@@ -44,6 +45,13 @@ class MainActivity : BaseActivity(), View.OnClickListener {
     }
 
     override fun onClick(view: View) {
+        get(1,"我们")
+    }
+
+    @DebugLog
+    fun get(int: Int, string: String) {
         demoViewModel.get(edt.text.toString())
     }
+
+
 }
