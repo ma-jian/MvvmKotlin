@@ -68,8 +68,6 @@ public class ApiFactoryProcessor implements IProcess {
 
                 //方法处理
                 for (ExecutableElement methodElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
-                    String returnType = methodElement.getReturnType().toString();
-                    String resultFunc = "";
                     String resultFuncType = "";
                     String serverDataFuncType = "";
 
@@ -77,23 +75,34 @@ public class ApiFactoryProcessor implements IProcess {
                         if (methodElement.getReturnType().toString().contains("HttpResHeaderList")) {
                             resultFuncType = "HttpResultListFunc";
                             serverDataFuncType = "ServerDataListFunc";
-                            resultFunc = returnType.substring(returnType.indexOf("HttpResHeaderList") + "HttpResHeaderList".length() + 1, returnType.lastIndexOf(">") - 1);
                         } else if (methodElement.getReturnType().toString().contains("HttpResHeader")) {
                             resultFuncType = "HttpResultFunc";
                             serverDataFuncType = "ServerDataFunc";
-                            resultFunc = returnType.substring(returnType.indexOf("HttpResHeader") + "HttpResHeader".length() + 1, returnType.lastIndexOf(">") - 1);
                         } else {
                             error(processor.mMessager, "API工厂目前仅支持 带有 HttpResHeader | HttpResHeaderList 的接口");
                         }
 
 
-                        ClassName restult = ClassName.get(resultFunc.substring(0, resultFunc.lastIndexOf(".")), resultFunc.substring(resultFunc.lastIndexOf(".") + 1, resultFunc.length()));
+                        TypeName methodTypeName = TypeName.get(methodElement.getReturnType());
+                        TypeName resultType;
+                        if (methodTypeName instanceof ParameterizedTypeName) {
+                            TypeName name = ((ParameterizedTypeName) methodTypeName).typeArguments.get(0);
+                            if (name instanceof ParameterizedTypeName) {
+                                resultType = ((ParameterizedTypeName) name).typeArguments.get(0);
+                            } else {
+                                resultType = name;
+                            }
+                        } else {
+                            error(processor.mMessager, "必须使用Flowable 包装数据");
+                            return;
+                        }
+
                         TypeName returnTypeName;
                         //返回值类型
                         if (resultFuncType.equals("HttpResultFunc")) {
-                            returnTypeName = ParameterizedTypeName.get(ClassName.get("io.reactivex", "Flowable"), restult);
+                            returnTypeName = ParameterizedTypeName.get(ClassName.get("io.reactivex", "Flowable"), resultType);
                         } else {
-                            returnTypeName = ParameterizedTypeName.get(ClassName.get("io.reactivex", "Flowable"), ParameterizedTypeName.get(ClassName.get("java.util", "ArrayList"), restult));
+                            returnTypeName = ParameterizedTypeName.get(ClassName.get("io.reactivex", "Flowable"), ParameterizedTypeName.get(ClassName.get("java.util", "ArrayList"), resultType));
                         }
 
                         MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(methodElement.getSimpleName().toString())
@@ -120,9 +129,9 @@ public class ApiFactoryProcessor implements IProcess {
                                 methodElement.getSimpleName().toString(),
                                 paramsBuilder.toString(),
                                 ClassName.get(LIBPACKAGENAME + ".http", serverDataFuncType),
-                                restult,
+                                resultType,
                                 ClassName.get(LIBPACKAGENAME + ".http", resultFuncType),
-                                restult,
+                                resultType,
                                 ClassName.get(LIBPACKAGENAME + ".utils", "RxThread"));
                         tb.addMethod(methodBuilder.build());
                     } else {
