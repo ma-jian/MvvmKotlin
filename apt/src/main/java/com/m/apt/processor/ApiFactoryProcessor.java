@@ -1,5 +1,8 @@
 package com.m.apt.processor;
 
+import com.m.annotation.ApiFactory;
+import com.m.apt.AnnotationProcessor;
+import com.m.apt.IProcess;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
@@ -22,10 +25,6 @@ import javax.tools.Diagnostic;
 
 import dagger.Component;
 
-import com.m.annotation.ApiFactory;
-import com.m.apt.AnnotationProcessor;
-import com.m.apt.IProcess;
-
 /**
  * Created by majian
  * Date : 2018/12/19
@@ -43,16 +42,14 @@ public class ApiFactoryProcessor implements IProcess {
              */
             String PACKAGENAME = "com.m.mvvmkotlin";
             String LIBPACKAGENAME = "com.m.library";
-            String buildPackage = "";
-            String CLASS_NAME = "";
+
             for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(ApiFactory.class))) {
-                CLASS_NAME = typeElement.getSimpleName().toString() + "Factory";
+                String CLASS_NAME = typeElement.getSimpleName().toString() + "Factory";
                 String typePackageName = typeElement.getQualifiedName().toString();
                 String className = typeElement.getSimpleName().toString();
                 /**
                  * 生产类，构造方法
                  */
-
                 TypeName typeName = ParameterizedTypeName.get(ClassName.get(LIBPACKAGENAME + ".http", "BaseHttpFactory"), TypeName.get(typeElement.asType()));
 
                 TypeSpec.Builder tb = TypeSpec.classBuilder(CLASS_NAME)
@@ -70,60 +67,74 @@ public class ApiFactoryProcessor implements IProcess {
                 for (ExecutableElement methodElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
                     String resultFuncType = "";
                     String serverDataFuncType = "";
-
-                    if (methodElement.getReturnType().toString().contains("HttpResHeaderList") || methodElement.getReturnType().toString().contains("HttpResHeader")) {
-                        if (methodElement.getReturnType().toString().contains("HttpResHeaderList")) {
-                            resultFuncType = "HttpResultListFunc";
-                            serverDataFuncType = "ServerDataListFunc";
-                        } else if (methodElement.getReturnType().toString().contains("HttpResHeader")) {
-                            resultFuncType = "HttpResultFunc";
-                            serverDataFuncType = "ServerDataFunc";
-                        } else {
-                            error(processor.mMessager, "API工厂目前仅支持 带有 HttpResHeader | HttpResHeaderList 的接口");
-                        }
-
-
-                        TypeName methodTypeName = TypeName.get(methodElement.getReturnType());
-                        TypeName resultType;
-                        if (methodTypeName instanceof ParameterizedTypeName) {
-                            TypeName name = ((ParameterizedTypeName) methodTypeName).typeArguments.get(0);
-                            if (name instanceof ParameterizedTypeName) {
-                                resultType = ((ParameterizedTypeName) name).typeArguments.get(0);
+                    TypeName methodReturnType = TypeName.get(methodElement.getReturnType());
+                    TypeName resultType;
+                    ClassName resultRawType = null;
+                    ClassName rawType = null;
+                    TypeName wrapType;
+                    if (methodReturnType instanceof ParameterizedTypeName) {
+                        wrapType = ((ParameterizedTypeName) methodReturnType).typeArguments.get(0);
+                        rawType = ((ParameterizedTypeName) methodReturnType).rawType;
+                        if (wrapType instanceof ParameterizedTypeName) {
+                            ClassName type = ((ParameterizedTypeName) wrapType).rawType;
+                            if (type.equals(ClassName.get(LIBPACKAGENAME + ".http", "HttpResHeaderList"))) {
+                                resultType = ((ParameterizedTypeName) wrapType).typeArguments.get(0);
+                                resultFuncType = "HttpResultListFunc";
+                                serverDataFuncType = "ServerDataListFunc";
+                                resultRawType = type;
+                            } else if (type.equals(ClassName.get(LIBPACKAGENAME + ".http", "HttpResHeader"))) {
+                                resultType = ((ParameterizedTypeName) wrapType).typeArguments.get(0);
+                                resultFuncType = "HttpResultFunc";
+                                serverDataFuncType = "ServerDataFunc";
+                                resultRawType = type;
                             } else {
-                                resultType = name;
+                                //特殊情况 全部返回请求数据
+                                resultType = wrapType;
                             }
                         } else {
-                            error(processor.mMessager, "必须使用Flowable 包装数据");
-                            return;
+                            resultType = wrapType;
                         }
+                    } else {
+                        error(processor.mMessager, "必须使用Flowable 包装数据");
+                        return;
+                    }
 
-                        TypeName returnTypeName;
-                        //返回值类型
-                        if (resultFuncType.equals("HttpResultFunc")) {
-                            returnTypeName = ParameterizedTypeName.get(ClassName.get("io.reactivex", "Flowable"), resultType);
-                        } else {
-                            returnTypeName = ParameterizedTypeName.get(ClassName.get("io.reactivex", "Flowable"), ParameterizedTypeName.get(ClassName.get("java.util", "ArrayList"), resultType));
-                        }
+                    TypeName returnTypeName;
+                    //返回值类型
+                    if (resultRawType == null || resultRawType.equals(ClassName.get(LIBPACKAGENAME + ".http", "HttpResHeader"))) {
+                        returnTypeName = ParameterizedTypeName.get(rawType, resultType);
+                    } else if (resultRawType.equals(ClassName.get(LIBPACKAGENAME + ".http", "HttpResHeaderList"))) {
+                        returnTypeName = ParameterizedTypeName.get(rawType, ParameterizedTypeName.get(ClassName.get("java.util", "ArrayList"), resultType));
+                    } else {
+                        returnTypeName = ParameterizedTypeName.get(rawType, resultType);
+                    }
 
-                        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(methodElement.getSimpleName().toString())
-                                .addJavadoc("@apt生产的接口方法 {@link $T#$N} \n", TypeName.get(typeElement.asType()), methodElement.getSimpleName())
-                                .returns(returnTypeName)
-                                .addModifiers(Modifier.PUBLIC);
+                    MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(methodElement.getSimpleName().toString())
+                            .addJavadoc("@apt生产的接口方法 {@link $T#$N} \n", TypeName.get(typeElement.asType()), methodElement.getSimpleName())
+                            .returns(returnTypeName)
+                            .addModifiers(Modifier.PUBLIC);
 
-                        //参数
-                        StringBuilder paramsBuilder = new StringBuilder();
-                        for (VariableElement variableElement : methodElement.getParameters()) {
-                            methodBuilder.addParameter(TypeName.get(variableElement.asType()), variableElement.getSimpleName().toString());
-                            paramsBuilder.append(variableElement.getSimpleName().toString()).append(",");
-                        }
+                    //参数
+                    StringBuilder paramsBuilder = new StringBuilder();
+                    for (VariableElement variableElement : methodElement.getParameters()) {
+                        methodBuilder.addParameter(TypeName.get(variableElement.asType()), variableElement.getSimpleName().toString());
+                        paramsBuilder.append(variableElement.getSimpleName().toString()).append(",");
+                    }
 
-                        if (!paramsBuilder.toString().isEmpty()) {
-                            paramsBuilder.replace(paramsBuilder.toString().length() - 1, paramsBuilder.toString().length(), "");
-                        }
+                    if (!paramsBuilder.toString().isEmpty()) {
+                        paramsBuilder.replace(paramsBuilder.toString().length() - 1, paramsBuilder.toString().length(), "");
+                    }
 
-                        /**
-                         * 处理带有header数据
-                         */
+                    /**
+                     * 处理数据
+                     */
+                    if (resultRawType == null) {
+                        methodBuilder.addStatement("return $N.$N($L).compose($T.Companion.applyAsync())",
+                                "mObtainService",
+                                methodElement.getSimpleName().toString(),
+                                paramsBuilder.toString(),
+                                ClassName.get(LIBPACKAGENAME + ".utils", "RxThread"));
+                    } else {
                         methodBuilder.addStatement("return $N.$N($L).map(new $T<$T>()).onErrorResumeNext(new $T<$T>()).compose($T.Companion.applyAsync())",
                                 "mObtainService",
                                 methodElement.getSimpleName().toString(),
@@ -133,55 +144,29 @@ public class ApiFactoryProcessor implements IProcess {
                                 ClassName.get(LIBPACKAGENAME + ".http", resultFuncType),
                                 resultType,
                                 ClassName.get(LIBPACKAGENAME + ".utils", "RxThread"));
-                        tb.addMethod(methodBuilder.build());
-                    } else {
-
-                        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(methodElement.getSimpleName().toString())
-                                .addJavadoc("@apt生产的接口方法 {@link $T#$N} \n", TypeName.get(typeElement.asType()), methodElement.getSimpleName())
-                                .returns(TypeName.get(methodElement.getReturnType()))
-                                .addModifiers(Modifier.PUBLIC);
-
-                        //参数
-                        StringBuilder paramsBuilder = new StringBuilder();
-                        for (VariableElement variableElement : methodElement.getParameters()) {
-                            methodBuilder.addParameter(TypeName.get(variableElement.asType()), variableElement.getSimpleName().toString());
-                            paramsBuilder.append(variableElement.getSimpleName().toString()).append(",");
-                        }
-
-                        if (!paramsBuilder.toString().isEmpty()) {
-                            paramsBuilder.replace(paramsBuilder.toString().length() - 1, paramsBuilder.toString().length(), "");
-                        }
-
-                        /**
-                         * 处理普通数据
-                         */
-                        methodBuilder.addStatement("return $N.$N($L).compose($T.Companion.applyAsync())",
-                                "mObtainService",
-                                methodElement.getSimpleName().toString(),
-                                paramsBuilder.toString(),
-                                ClassName.get(LIBPACKAGENAME + ".utils", "RxThread"));
-                        tb.addMethod(methodBuilder.build());
                     }
+
+                    tb.addMethod(methodBuilder.build());
                 }
                 tb.addMethod(constructorBuilder.build());
                 //生成源码位置
-                buildPackage = typePackageName.replace("." + className, "");
+                String buildPackage = typePackageName.replace("." + className, "");
                 JavaFile javaFile = JavaFile.builder(buildPackage, tb.build()).build();
                 javaFile.writeTo(processor.mFiler);// 在 app /build/generated/source/kapt 生成一份源代码
             }
 
 
             if (!roundEnv.getElementsAnnotatedWith(ApiFactory.class).isEmpty()) {
-                String repositoryPackage = PACKAGENAME + ".bind"; //BaseRepository位置
+                String baseRepositoryPackage = PACKAGENAME + ".bind";
                 String interComponent = "BaseRepositoryComponent";
                 TypeSpec.Builder componentBuilder = TypeSpec.interfaceBuilder(interComponent)
                         .addAnnotation(Singleton.class)
                         .addAnnotation(AnnotationSpec.builder(Component.class)
                                 .addMember("modules", "{$T.class}", ClassName.get(LIBPACKAGENAME + ".di.module", "RetrofitModule")).build())
-                        .addMethod(MethodSpec.methodBuilder("inject").addParameter(ClassName.get(repositoryPackage, "BaseRepository"), "repository")
+                        .addMethod(MethodSpec.methodBuilder("inject").addParameter(ClassName.get(baseRepositoryPackage, "BaseRepository"), "repository")
                                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT).build());
 
-                JavaFile componentFile = JavaFile.builder(repositoryPackage, componentBuilder.build()).build();
+                JavaFile componentFile = JavaFile.builder(baseRepositoryPackage, componentBuilder.build()).build();
                 componentFile.writeTo(processor.mFiler);// 在 app /build/generated/source/kapt 生成一份源代码
 
                 TypeSpec.Builder classBuilder = TypeSpec.classBuilder("BaseRepository")
@@ -191,7 +176,7 @@ public class ApiFactoryProcessor implements IProcess {
 
                 MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
                         .addStatement("this.mSubscription = new $T()", ClassName.get("io.reactivex.disposables", "CompositeDisposable"))
-                        .addStatement("$T.builder().build().inject(this)", ClassName.get(repositoryPackage, "Dagger" + interComponent))
+                        .addStatement("$T.builder().build().inject(this)", ClassName.get(baseRepositoryPackage, "Dagger" + interComponent))
                         .addModifiers(Modifier.PUBLIC);
 
                 FieldSpec disposiableField = FieldSpec.builder(ClassName.get("io.reactivex.disposables", "CompositeDisposable"), "mSubscription", Modifier.PUBLIC).build();
@@ -201,7 +186,10 @@ public class ApiFactoryProcessor implements IProcess {
                         .addAnnotation(Override.class)
                         .addStatement(" mSubscription.clear()");
                 for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(ApiFactory.class))) {
-                    FieldSpec fieldSpec = FieldSpec.builder(ClassName.get(buildPackage, CLASS_NAME), "m" + typeElement.getSimpleName() + "Repository", Modifier.PUBLIC)
+                    String typePackageName = typeElement.getQualifiedName().toString();
+                    String className = typeElement.getSimpleName().toString();
+                    String buildPackage = typePackageName.replace("." + className, "");
+                    FieldSpec fieldSpec = FieldSpec.builder(ClassName.get(buildPackage, typeElement.getSimpleName().toString() + "Factory"), "m" + typeElement.getSimpleName() + "Repository", Modifier.PUBLIC)
                             .addAnnotation(Inject.class)
                             .addJavadoc("@apt生产 注入 @{@link $T} 的网络请求工厂 \n", typeElement.asType()).build();
                     classBuilder.addField(fieldSpec);
@@ -210,7 +198,7 @@ public class ApiFactoryProcessor implements IProcess {
                 classBuilder.addField(disposiableField);
                 classBuilder.addMethod(constructorBuilder.build());
                 classBuilder.addMethod(methodBuilder.build());
-                JavaFile javaFile = JavaFile.builder(repositoryPackage, classBuilder.build()).build();
+                JavaFile javaFile = JavaFile.builder(baseRepositoryPackage, classBuilder.build()).build();
                 javaFile.writeTo(processor.mFiler);// 在 app /build/generated/source/kapt 生成一份源代码
             }
         } catch (Exception e) {
