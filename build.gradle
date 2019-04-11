@@ -69,5 +69,9 @@ ext {
             baseUrl: "https://api.github.com/"
     ]
 
+
+    release = [
+            baseUrl: "https://api.github.com/"
+    ]
 }
 

@@ -1,7 +1,5 @@
 package com.m.library.http
 
-import java.lang.reflect.ParameterizedType
-
 /**
  * Created by majian
  * Date : 2018/12/19
@@ -9,14 +7,12 @@ import java.lang.reflect.ParameterizedType
  */
 
 
-open class BaseHttpFactory<T>(retrofitInterface: RetrofitInterface) {
+open class BaseHttpFactory<T>(retrofitInterface: RetrofitInterface, clazz: Class<T>) {
     @JvmField
     var mObtainService: T
 
     init {
-        val genericSuperclass = javaClass.genericSuperclass
-        if (genericSuperclass is ParameterizedType) {
-            val clazz: Class<T> = genericSuperclass.actualTypeArguments[0] as Class<T>
+        if (clazz.isInterface) {
             mObtainService = retrofitInterface.obtainService(clazz)
         } else {
             throw IllegalArgumentException("must be give the retrofit service,that is interfaces, 指定需要的Service")

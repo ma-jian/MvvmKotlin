@@ -38,7 +38,7 @@ class Log {
         }
 
 
-        fun d(tag: String, msg: String? = "") {
+        fun d(tag: String, msg: String) {
             if (DEBUG) Log.d(tag, msg)
         }
     }

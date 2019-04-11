@@ -21,6 +21,11 @@ android {
             buildConfigField "Boolean", "ISDEBUG", "true"
             buildConfigField "String", "BASE_URL", "\"$rootProject.ext.debug.baseUrl\""
         }
+
+        release {
+            buildConfigField "Boolean", "ISDEBUG", "true"
+            buildConfigField "String", "BASE_URL", "\"$rootProject.ext.debug.baseUrl\""
+        }
     }
 }
 
@@ -66,8 +71,10 @@ dependencies {
     kapt "com.google.dagger:dagger-compiler:$rootProject.dagger2"
 
     //leakcanary
-    debugApi "com.squareup.leakcanary:leakcanary-android:$rootProject.leakcanary"
+    debugImplementation "com.squareup.leakcanary:leakcanary-android:$rootProject.leakcanary"
     debugApi "com.squareup.leakcanary:leakcanary-support-fragment:$rootProject.leakcanary"
+    releaseImplementation "com.squareup.leakcanary:leakcanary-android-no-op:$rootProject.leakcanary"
+
 //    compileOnly 'org.glassfish:javax.com.m.annotation:10.0-b28'
 
     api 'com.google.code.findbugs:jsr305:3.0.2'

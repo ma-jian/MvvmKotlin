@@ -61,7 +61,7 @@ public class ApiFactoryProcessor implements IProcess {
                         .addModifiers(Modifier.PUBLIC)
                         .addParameter(ClassName.get(LIBPACKAGENAME + ".http", "RetrofitInterface"), "retrofitInterface")
                         .addAnnotation(Inject.class)
-                        .addStatement(" super($N)", "retrofitInterface");
+                        .addStatement(" super($N, $T.class)", "retrofitInterface", typeElement.asType());
 
                 //方法处理
                 for (ExecutableElement methodElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
@@ -159,32 +159,39 @@ public class ApiFactoryProcessor implements IProcess {
             if (!roundEnv.getElementsAnnotatedWith(ApiFactory.class).isEmpty()) {
                 String baseRepositoryPackage = PACKAGENAME + ".bind";
                 String interComponent = "BaseRepositoryComponent";
+                String factoryName = "RepositoryFactory";
                 TypeSpec.Builder componentBuilder = TypeSpec.interfaceBuilder(interComponent)
                         .addAnnotation(Singleton.class)
                         .addAnnotation(AnnotationSpec.builder(Component.class)
                                 .addMember("modules", "{$T.class}", ClassName.get(LIBPACKAGENAME + ".di.module", "RetrofitModule")).build())
-                        .addMethod(MethodSpec.methodBuilder("inject").addParameter(ClassName.get(baseRepositoryPackage, "BaseRepository"), "repository")
+                        .addMethod(MethodSpec.methodBuilder("inject").addParameter(ClassName.get(baseRepositoryPackage, factoryName), "repository")
                                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT).build());
 
                 JavaFile componentFile = JavaFile.builder(baseRepositoryPackage, componentBuilder.build()).build();
                 componentFile.writeTo(processor.mFiler);// 在 app /build/generated/source/kapt 生成一份源代码
 
-                TypeSpec.Builder classBuilder = TypeSpec.classBuilder("BaseRepository")
-                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                /**
+                 *
+                 */
+                TypeSpec.Builder classBuilder = TypeSpec.classBuilder(factoryName)
+                        .addModifiers(Modifier.PUBLIC)
                         .addJavadoc("@API工厂此类由apt自动生成 数据层基类 \n")
                         .addSuperinterface(ClassName.get(LIBPACKAGENAME + ".http", "RepositoryInterface"));
 
                 MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
                         .addStatement("this.mSubscription = new $T()", ClassName.get("io.reactivex.disposables", "CompositeDisposable"))
+                        .addStatement("$T.Companion.e($S)", ClassName.get(LIBPACKAGENAME + ".utils", "Log"), "Apt ---- RepositoryFactory init----")
                         .addStatement("$T.builder().build().inject(this)", ClassName.get(baseRepositoryPackage, "Dagger" + interComponent))
                         .addModifiers(Modifier.PUBLIC);
 
                 FieldSpec disposiableField = FieldSpec.builder(ClassName.get("io.reactivex.disposables", "CompositeDisposable"), "mSubscription", Modifier.PUBLIC).build();
+                FieldSpec repositoryField = FieldSpec.builder(ClassName.get(baseRepositoryPackage, factoryName), "mRepository", Modifier.PRIVATE, Modifier.STATIC).build();
                 MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("onCleared")
                         .addModifiers(Modifier.PUBLIC)
                         .returns(TypeName.VOID)
                         .addAnnotation(Override.class)
                         .addStatement(" mSubscription.clear()");
+
                 for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(ApiFactory.class))) {
                     String typePackageName = typeElement.getQualifiedName().toString();
                     String className = typeElement.getSimpleName().toString();
@@ -195,11 +202,58 @@ public class ApiFactoryProcessor implements IProcess {
                     classBuilder.addField(fieldSpec);
                 }
 
+                MethodSpec.Builder repositoryMethod = MethodSpec.methodBuilder("getInstance")
+                        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                        .returns(ClassName.get(baseRepositoryPackage, factoryName))
+                        .addStatement("if (mRepository == null) { mRepository = new $T(); } return mRepository", ClassName.get(baseRepositoryPackage, factoryName));
+
+
                 classBuilder.addField(disposiableField);
+                classBuilder.addField(repositoryField);
                 classBuilder.addMethod(constructorBuilder.build());
                 classBuilder.addMethod(methodBuilder.build());
+                classBuilder.addMethod(repositoryMethod.build());
                 JavaFile javaFile = JavaFile.builder(baseRepositoryPackage, classBuilder.build()).build();
                 javaFile.writeTo(processor.mFiler);// 在 app /build/generated/source/kapt 生成一份源代码
+
+                /**
+                 * 构建BaseRepository
+                 */
+                String baseRepository = "BaseRepository";
+                TypeSpec.Builder baseClassBuilder = TypeSpec.classBuilder(baseRepository)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addJavadoc("@API工厂此类由apt自动生成 数据层基类 \n")
+                        .addSuperinterface(ClassName.get(LIBPACKAGENAME + ".http", "RepositoryInterface"));
+
+                FieldSpec.Builder baseDisposiableField = FieldSpec.builder(ClassName.get("io.reactivex.disposables", "CompositeDisposable"), "mSubscription", Modifier.PUBLIC);
+
+                MethodSpec.Builder baseConstructorBuilder = MethodSpec.constructorBuilder()
+                        .addStatement("this.$N = $T.getInstance().$N", "mSubscription", ClassName.get(baseRepositoryPackage, factoryName), "mSubscription")
+                        .addModifiers(Modifier.PUBLIC);
+
+                MethodSpec.Builder baseMethodBuilder = MethodSpec.methodBuilder("onCleared")
+                        .addModifiers(Modifier.PUBLIC)
+                        .returns(TypeName.VOID)
+                        .addAnnotation(Override.class)
+                        .addStatement("$T.getInstance().onCleared()", ClassName.get(baseRepositoryPackage, factoryName));
+
+                for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(ApiFactory.class))) {
+                    String typePackageName = typeElement.getQualifiedName().toString();
+                    String className = typeElement.getSimpleName().toString();
+                    String buildPackage = typePackageName.replace("." + className, "");
+                    FieldSpec fieldSpec = FieldSpec.builder(ClassName.get(buildPackage, typeElement.getSimpleName().toString() + "Factory"), "m" + typeElement.getSimpleName() + "Repository", Modifier.PUBLIC)
+//                            .addAnnotation(Inject.class)
+                            .addJavadoc("@apt生产 注入 @{@link $T} 的网络请求工厂 \n", typeElement.asType()).build();
+                    baseClassBuilder.addField(fieldSpec);
+                    baseConstructorBuilder.addStatement("this.$N = $T.getInstance().$N", "m" + typeElement.getSimpleName() + "Repository", ClassName.get(baseRepositoryPackage, factoryName), "m" + typeElement.getSimpleName() + "Repository");
+                }
+
+                baseClassBuilder.addField(baseDisposiableField.build());
+                baseClassBuilder.addMethod(baseConstructorBuilder.build());
+                baseClassBuilder.addMethod(baseMethodBuilder.build());
+                JavaFile baseJavaFile = JavaFile.builder(baseRepositoryPackage, baseClassBuilder.build()).build();
+                baseJavaFile.writeTo(processor.mFiler);// 在 app /build/generated/source/kapt 生成一份源代码
+
             }
         } catch (Exception e) {
             error(processor.mMessager, e.getMessage());
