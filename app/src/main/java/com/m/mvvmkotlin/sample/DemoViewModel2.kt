@@ -3,6 +3,7 @@ package com.m.mvvmkotlin.sample
 import androidx.databinding.ObservableField
 import androidx.databinding.adapters.TextViewBindingAdapter
 import androidx.lifecycle.ViewModel
+import com.m.mvvmkotlin.base.BaseViewModel
 
 /*
  * Created by majian
@@ -10,20 +11,12 @@ import androidx.lifecycle.ViewModel
  * Describe :
  */
 
-class DemoViewModel2 : ViewModel(), DemoTaskInterface.RespositoryTask {
-
-    override fun result(result: String) {}
-
+class DemoViewModel2 : BaseViewModel() {
     val data2 = ObservableField<String>()
 
     override fun onCleared() {
         super.onCleared()
     }
 
-
-    val textChange = object : TextViewBindingAdapter.OnTextChanged {
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            data2.set(s.toString())
-        }
-    }
+    val textChange = TextViewBindingAdapter.OnTextChanged { s, start, before, count -> data2.set(s.toString()) }
 }

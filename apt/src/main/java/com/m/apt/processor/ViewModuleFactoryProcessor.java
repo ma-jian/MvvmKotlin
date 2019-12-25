@@ -56,7 +56,7 @@ public class ViewModuleFactoryProcessor implements IProcess {
                 return;
             }
             LinkedHashMap<Name, ClassName> linkedHashMap = new LinkedHashMap<>();
-            String modelComponent = "ViewModelToolsComponent";
+            String modelComponent = "ViewModelFactoryComponent";
             TypeSpec.Builder componentBuilder = TypeSpec.interfaceBuilder(modelComponent)
                     .addJavadoc("@apt生产 dagger注入数据 {@link $T} \n", className)
                     .addAnnotation(Singleton.class)
@@ -64,7 +64,7 @@ public class ViewModuleFactoryProcessor implements IProcess {
 //                            .addMember("modules", "{$T.class}", ClassName.get("com.sy.gristtown.di.module", "RetrofitModule"))
                             .build())
                     .addMethod(MethodSpec.methodBuilder("inject")
-                            .addParameter(className, "viewModelTools")
+                            .addParameter(className, "viewModelFactory")
                             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT).build());
 
             JavaFile componentFile = JavaFile.builder(bubildPackage, componentBuilder.build()).build();
@@ -72,10 +72,10 @@ public class ViewModuleFactoryProcessor implements IProcess {
 
             //生成 ViewModelFactory
             TypeSpec.Builder classBuilder = TypeSpec.classBuilder(name)
-                    .addJavadoc("@apt生产 $N View 绑定ViewModel 与 ViewModelFactory 的工具类\n", name)
+                    .addJavadoc("@apt生产 ViewModelFactory View 绑定ViewModel 与 ViewModelFactory 的工具类\n")
                     .addModifiers(Modifier.PUBLIC);
 
-            FieldSpec.Builder fieldBuilder = FieldSpec.builder(className, "mViewModelTools")
+            FieldSpec.Builder fieldBuilder = FieldSpec.builder(className, "mViewModelFactory")
                     .addModifiers(Modifier.PRIVATE, Modifier.STATIC);
             classBuilder.addField(fieldBuilder.build());
 
@@ -89,7 +89,7 @@ public class ViewModuleFactoryProcessor implements IProcess {
                     .returns(className)
                     .addJavadoc("@ 获取 $N 单例\n", name)
                     .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                    .addStatement("synchronized($N.class) { if (mViewModelTools == null) { mViewModelTools = new $T();}} return mViewModelTools", name, className);
+                    .addStatement("synchronized($N.class) { if (mViewModelFactory == null) { mViewModelFactory = new $T();}} return mViewModelFactory", name, className);
             classBuilder.addMethod(instanceBuilder.build());
 
             MethodSpec.Builder activityMethodBuilder = MethodSpec.methodBuilder(bindName)
@@ -103,7 +103,7 @@ public class ViewModuleFactoryProcessor implements IProcess {
             for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(InjectViewModel.class))) {
                 MethodSpec.Builder methodBuilder;
                 String baseName;
-                if (typeElement.getSuperclass().toString().contains("BaseActivity")) {
+                if (typeElement.getSuperclass().toString().contains("Activity")) {
                     methodBuilder = activityMethodBuilder;
                     baseName = "baseActivity";
                 } else {

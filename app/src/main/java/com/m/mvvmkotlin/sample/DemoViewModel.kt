@@ -2,6 +2,8 @@ package com.m.mvvmkotlin.sample
 
 import androidx.databinding.ObservableField
 import androidx.lifecycle.ViewModel
+import com.m.mvvmkotlin.base.BaseViewModel
+import kotlinx.coroutines.launch
 
 /*
  * Created by majian
@@ -9,16 +11,13 @@ import androidx.lifecycle.ViewModel
  * Describe :
  */
 
-class DemoViewModel(private var demoRepository: DemoRepository) : ViewModel(), DemoTaskInterface.RespositoryTask {
+class DemoViewModel(private var demoRepository: DemoRepository) : BaseViewModel() {
 
     val data = ObservableField<String>()
 
-    override fun result(result: String) {
-        data.set(result)
-    }
-
-    fun get(user: String) {
-        demoRepository.getUser(user, this)
+    fun get(user: String) = launch(exceptionHandler) {
+        val await = demoRepository.getUser(user).await()
+        data.set(await.toString())
     }
 
     override fun onCleared() {
