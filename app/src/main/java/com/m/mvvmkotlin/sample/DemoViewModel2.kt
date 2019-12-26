@@ -5,7 +5,7 @@ import androidx.databinding.adapters.TextViewBindingAdapter
 import androidx.lifecycle.ViewModel
 import com.m.mvvmkotlin.base.BaseViewModel
 
-/*
+/**
  * Created by majian
  * Date : 2018/12/20
  * Describe :

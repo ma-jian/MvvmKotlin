@@ -19,8 +19,8 @@ import kotlin.coroutines.CoroutineContext
 
 open class BaseViewModel : ViewModel(), CoroutineScope {
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main
-    val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+        get() = Dispatchers.Main + exceptionHandler
+    private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
         exception.let {
             handleException(it)
             Log.e("exceptionHandler ${it.message}")
@@ -35,7 +35,9 @@ open class BaseViewModel : ViewModel(), CoroutineScope {
     }
 
     private fun handleException(throwable: Throwable?) {
-
+        throwable?.also {
+            errorMessage.value = ExceptionHandle.handleException(throwable)
+        }
     }
 
 
