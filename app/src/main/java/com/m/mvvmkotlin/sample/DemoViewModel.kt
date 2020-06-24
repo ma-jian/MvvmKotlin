@@ -11,13 +11,15 @@ import kotlinx.coroutines.launch
  * Describe :
  */
 
-class DemoViewModel(private var demoRepository: DemoRepository) : BaseViewModel() {
+class DemoViewModel(private var demoRepository: DemoRepository, var demoRepository2: DemoRepository) : BaseViewModel() {
 
     val data = ObservableField<String>()
 
     fun get(user: String) = launch {
         val await = demoRepository.getUser(user).await()
         data.set(await.toString())
+        val await2 = demoRepository2.getUser("").await()
+        data.set(await2.toString())
     }
 
     override fun onCleared() {

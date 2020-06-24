@@ -1,0 +1,19 @@
+import org.gradle.internal.jvm.Jvm
+
+apply plugin: 'java-library'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.google.auto.service:auto-service:1.0-rc5'
+    annotationProcessor "com.google.auto.service:auto-service:1.0-rc5"
+    implementation 'com.github.javaparser:javaparser-core-serialization:3.15.15'
+    implementation files(Jvm.current().toolsJar)
+
+}
+
+

@@ -1,6 +1,7 @@
 package com.m.mvvmkotlin
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.databinding.DataBindingUtil
 import com.m.annotation.BindViewModel
@@ -34,6 +35,7 @@ class MainActivity : BaseActivity(), View.OnClickListener {
         binding.onClick = this
         binding.viewModel = demoViewModel
         binding.viewModel2 = demoViewModel2
+        Log.e("majian", "我是一条日志！！！！！")
     }
 
     override fun initView(savedInstanceState: Bundle?) {

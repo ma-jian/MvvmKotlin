@@ -19,4 +19,10 @@ interface DemoService {
 
     @GET("api/discover/topic/list")
     fun topicList(): Flowable<HttpResHeaderList<DemoBean>>
+
+    @GET("api/discover/topic/list")
+    fun topicList2(): Flowable<HttpResHeaderList<DemoBean>>
+
+    @GET("api/discover/topic/list")
+    fun topicList3(): Flowable<HttpResHeaderList<DemoBean>>
 }

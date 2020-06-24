@@ -1,5 +1,6 @@
 package com.m.mvvmkotlin
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
 import com.m.library.IApplication
@@ -13,6 +14,10 @@ import com.m.library.lifecycle.ApplicationDelegate
 
 class MyApplication : Application(), IApplication {
     private lateinit var applicationDelegate: ApplicationDelegate
+
+    companion object {
+        lateinit var currentActivity: Activity
+    }
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)

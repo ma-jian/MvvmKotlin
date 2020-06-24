@@ -1,1 +1,2 @@
 include ':app', ':library', ':apt', ':annotation'
+include ':ast'

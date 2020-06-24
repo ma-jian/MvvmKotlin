@@ -58,6 +58,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(":library")
     kapt project(":apt")
+    kapt project(":ast")
     kapt "com.google.dagger:dagger-compiler:$rootProject.dagger2"
     kapt "com.github.bumptech.glide:compiler:$rootProject.glideVersion"
     kapt "androidx.room:room-compiler:$rootProject.roomVersion"
