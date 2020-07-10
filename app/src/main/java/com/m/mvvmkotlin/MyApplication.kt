@@ -17,12 +17,14 @@ class MyApplication : Application(), IApplication {
 
     companion object {
         lateinit var currentActivity: Activity
+        var application: MyApplication? = null
     }
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
         applicationDelegate = ApplicationDelegate()
         applicationDelegate.attachBaseContext(base)
+        application = this
     }
 
     override fun onCreate() {

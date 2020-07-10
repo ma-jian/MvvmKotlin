@@ -38,6 +38,11 @@ class MainActivity : BaseActivity(), View.OnClickListener {
         Log.e("majian", "我是一条日志！！！！！")
     }
 
+    override fun onResume() {
+        super.onResume()
+        DialogStackManager.findTopActivity()
+    }
+
     override fun initView(savedInstanceState: Bundle?) {
 
     }

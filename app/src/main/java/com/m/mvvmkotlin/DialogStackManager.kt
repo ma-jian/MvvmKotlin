@@ -1,8 +1,17 @@
 package com.m.mvvmkotlin
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.content.ComponentName
+import android.content.Context
+import android.os.Build
+import android.os.IBinder
+import android.util.ArrayMap
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.LifecycleObserver
+import java.lang.Exception
 import java.util.*
 
 
@@ -10,6 +19,7 @@ import java.util.*
  * dialog stack
  */
 
+@Suppress("UNREACHABLE_CODE")
 class DialogStackManager {
     companion object {
         val stack = Stack<StackEmpty>()
@@ -41,18 +51,60 @@ class DialogStackManager {
                 println("$it")
             }
             println("------------------------------------------------------")
-
+            showView()
         }
 
         fun showView() {
-            val activity = MyApplication.currentActivity
             if (stack.isNotEmpty()) {
-                if (MyApplication.currentActivity is FragmentActivity) {
-                    val fragments =
-                        (MyApplication.currentActivity as FragmentActivity).supportFragmentManager.fragments
-                    fragments.filter { it.isAdded && it.isResumed && it.isVisible }
+                findTopActivity()?.run {
+                    lifecycle.addObserver(object : LifecycleObserver {
+
+                        fun onDestory() {}
+
+                    })
+                    val fragments = supportFragmentManager?.fragments
+                    fragments?.filter { it.isAdded && it.isResumed && it.isVisible }
                 }
             }
+        }
+
+
+        fun findTopActivity(): FragmentActivity? {
+            val systemService =
+                MyApplication.application?.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val componentName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val taskInfo = systemService.appTasks.first().taskInfo
+                taskInfo.topActivity
+            } else {
+                val runningTasks = systemService.getRunningTasks(1)
+                if (runningTasks.isNotEmpty()) {
+                    runningTasks[0].topActivity
+                } else {
+                    null
+                }
+            }
+            try {
+                val activityThread = Class.forName("android.app.ActivityThread")
+                val method = activityThread.getMethod("currentActivityThread")
+                val currentActivityThread = method.invoke(null)
+                val field = activityThread.getDeclaredField("mActivities")
+                field.isAccessible = true
+                val map = field.get(currentActivityThread) as ArrayMap<IBinder, Any>
+                map.keys.forEach { i ->
+                    map[i]?.let {
+                        val f = it.javaClass.getDeclaredField("activity")
+                        f.isAccessible = true
+                        val ac = f.get(it) as FragmentActivity
+                        Log.e("majian", "ac ${ac.javaClass.simpleName}")
+                        if (ac.javaClass.simpleName == componentName?.className) {
+                            return ac
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return null
         }
     }
 
