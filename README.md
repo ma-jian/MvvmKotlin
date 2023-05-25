@@ -1,3 +1,6 @@
+# MVVM 更新的代码 查看[MvvmPoet](https://github.com/ma-jian/MvvmPoet)
+
+-----------------------------------------------------
 # MvvmKotlin
 
      只使用3个注解也可以轻松完成Mvvm框架的搭建，本项目根据Google 新框架jetpack配合dagger2 、Apt构建完成。
