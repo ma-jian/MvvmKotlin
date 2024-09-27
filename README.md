@@ -1,4 +1,6 @@
-# MVVM 更新的代码 查看[MvvmPoet](https://github.com/ma-jian/MvvmPoet)
+# 部分代码已经过时，不再更新
+## Activity Result API 方式启动的路由管理器 [Router](https://github.com/ma-jian/router)  
+## 多组件的[MvvmPoet](https://github.com/ma-jian/MvvmPoet)
 
 -----------------------------------------------------
 # MvvmKotlin
